@@ -128,7 +128,7 @@ clsmap = _backends({
     'ext:google': google.GoogleNamespaceManager,
     'ext:mongodb': mongodb.MongoNamespaceManager,
     'ext:redis': redisnm.RedisNamespaceManager,
-    'ext:rediscluster': redisclusternm
+    'ext:rediscluster': redisclusternm.RedisClusterNamespaceManager,
 })
 
 
