@@ -27,9 +27,7 @@ class RedisClusterNamespaceManager(NamespaceManager):
     Example: `redis://node-1:7001,redis://node-2:7002`
 
     The data will be stored into redis keys, with their name
-    starting with ``beaker_cache:``. So make sure you provide
-    a specific database number if you don't want to mix them
-    with your own data.
+    starting with ``beaker_cache:``.
     """
     MAX_KEY_LENGTH = 1024
 
