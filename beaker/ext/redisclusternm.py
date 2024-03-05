@@ -18,8 +18,13 @@ from beaker._compat import string_type, PY2
 class RedisClusterNamespaceManager(NamespaceManager):
     """Provides the :class:`.NamespaceManager` API over Redis cluster.
 
-    Provided ``url`` can be both a redis connection string or
+    Provided ``urls`` can be both multiple redis connection strings separated by a comma or
     an already existing RedisCluster instance.
+
+    Unlike a StrictRedis connection string, a RedisCluster one does not support
+    database indicators, it is zero by default.
+
+    Example: `redis://node-1:7001,redis://node-2:7002`
 
     The data will be stored into redis keys, with their name
     starting with ``beaker_cache:``. So make sure you provide
@@ -30,7 +35,7 @@ class RedisClusterNamespaceManager(NamespaceManager):
 
     clients = SyncDict()
 
-    def __init__(self, namespace, url, timeout=None, **kw):
+    def __init__(self, namespace, urls, timeout=None, **kw):
         super(RedisClusterNamespaceManager, self).__init__(namespace)
         self.lock_dir = None  # Redis uses redis itself for locking.
         self.timeout = timeout
@@ -39,11 +44,10 @@ class RedisClusterNamespaceManager(NamespaceManager):
         if redis is None:
             raise RuntimeError('redis is not available')
 
-        if isinstance(url, string_type):
-            for url in url.split(','):
+        if isinstance(urls, string_type):
+            for url in urls.split(','):
                 url_options = redis.connection.parse_url(url)
                 if 'db' in url_options:
-                    # Argument 'db' is not possible to use in cluster mode
                     raise redis.cluster.RedisClusterException(
                         "A ``db`` querystring option can only be 0 in cluster mode"
                     )
@@ -52,10 +56,10 @@ class RedisClusterNamespaceManager(NamespaceManager):
                     port=url_options.get('port')
                 ))
             self.client = RedisClusterNamespaceManager.clients.get(
-                url, redis.RedisCluster, startup_nodes=self.nodes
+                urls, redis.RedisCluster, startup_nodes=self.nodes
             )
         else:
-            self.client = url
+            self.client = urls
 
     def _format_key(self, key):
         if not isinstance(key, str):
@@ -107,8 +111,13 @@ class RedisClusterNamespaceManager(NamespaceManager):
 class RedisClusterSynchronizer(SynchronizerImpl):
     """Synchronizer based on redis cluster.
 
-    Provided ``url`` can be both a redis connection string or
+    Provided ``urls`` can be both multiple redis connection strings separated by a comma or
     an already existing RedisCluster instance.
+
+    Unlike a StrictRedis connection string, a RedisCluster one does not support
+    database indicators, it is zero by default.
+
+    Example: ``redis://node-1:7001,redis://node-2:7002,
 
     This Synchronizer only supports 1 reader or 1 writer at time, not concurrent readers.
     """
@@ -117,13 +126,13 @@ class RedisClusterSynchronizer(SynchronizerImpl):
     LOCK_EXPIRATION = 900
     MACHINE_ID = machine_identifier()
 
-    def __init__(self, identifier, url):
+    def __init__(self, identifier, urls):
         super(RedisClusterSynchronizer, self).__init__()
         self.identifier = 'beaker_lock:%s' % identifier
-        if isinstance(url, string_type):
-            self.client = RedisClusterNamespaceManager.clients.get(url, redis.RedisCluster.from_url, url)
+        if isinstance(urls, string_type):
+            self.client = RedisClusterNamespaceManager.clients.get(urls, redis.RedisCluster.from_url, urls)
         else:
-            self.client = url
+            self.client = urls
 
     def _get_owner_id(self):
         return (
