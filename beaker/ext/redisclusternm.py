@@ -54,7 +54,7 @@ class RedisClusterNamespaceManager(NamespaceManager):
                     port=url_options.get('port')
                 ))
             self.client = RedisClusterNamespaceManager.clients.get(
-                urls, redis.RedisCluster, startup_nodes=self.nodes
+                urls, redis.cluster.RedisCluster, startup_nodes=self.nodes
             )
         else:
             self.client = urls
@@ -128,7 +128,7 @@ class RedisClusterSynchronizer(SynchronizerImpl):
         super(RedisClusterSynchronizer, self).__init__()
         self.identifier = 'beaker_lock:%s' % identifier
         if isinstance(urls, string_type):
-            self.client = RedisClusterNamespaceManager.clients.get(urls, redis.RedisCluster.from_url, urls)
+            self.client = RedisClusterNamespaceManager.clients.get(urls, redis.cluster.RedisCluster.from_url, urls)
         else:
             self.client = urls
 
